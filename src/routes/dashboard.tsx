@@ -1,19 +1,108 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Plus, TrendingUp, TrendingDown, Wallet, ShoppingBag, X } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
+type TransactionType = "receita" | "custo" | "despesa";
+
+type Category = {
+  id: string;
+  name: string;
+  type: TransactionType;
+};
+
+type Transaction = {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  description: string | null;
+  date: string;
+  category_id: string | null;
+  categories: { name: string } | null;
+};
+
+function formatBRL(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 function DashboardPage() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [selectedType, setSelectedType] = useState<TransactionType>("receita");
+
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadData();
+  }, [user]);
+
+  async function loadData() {
+    setLoadingData(true);
+    const [{ data: txs }, { data: cats }] = await Promise.all([
+      supabase
+        .from("transactions")
+        .select("*, categories(name)")
+        .order("date", { ascending: false })
+        .limit(50),
+      supabase.from("categories").select("*").order("name"),
+    ]);
+    setTransactions((txs as Transaction[]) ?? []);
+    setCategories((cats as Category[]) ?? []);
+    setLoadingData(false);
+  }
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const amount = parseFloat((fd.get("amount") as string).replace(",", "."));
+    const description = (fd.get("description") as string).trim();
+    const category_id = fd.get("category_id") as string;
+    const date = fd.get("date") as string;
+
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Informe um valor válido");
+      return;
+    }
+
+    setSaving(true);
+    const { error } = await supabase.from("transactions").insert({
+      user_id: user!.id,
+      type: selectedType,
+      amount,
+      description: description || null,
+      category_id: category_id || null,
+      date,
+    });
+    setSaving(false);
+
+    if (error) { toast.error("Erro ao salvar lançamento"); return; }
+    toast.success("Lançamento salvo!");
+    setShowModal(false);
+    loadData();
+  }
+
+  const totals = {
+    receita: transactions.filter(t => t.type === "receita").reduce((s, t) => s + t.amount, 0),
+    custo: transactions.filter(t => t.type === "custo").reduce((s, t) => s + t.amount, 0),
+    despesa: transactions.filter(t => t.type === "despesa").reduce((s, t) => s + t.amount, 0),
+  };
+  const saldo = totals.receita - totals.custo - totals.despesa;
+  const filteredCategories = categories.filter(c => c.type === selectedType);
 
   if (loading || !user) {
     return (
@@ -29,9 +118,194 @@ function DashboardPage() {
         <h1 className="text-lg font-bold text-green-700">Meu Negócio Fácil</h1>
         <button onClick={() => signOut()} className="text-sm text-gray-500 hover:text-gray-800">Sair</button>
       </header>
-      <main className="mx-auto max-w-4xl px-6 py-10">
-        <p className="text-gray-500">Dashboard em construção... 🚧</p>
+
+      <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <SummaryCard label="Receitas" value={totals.receita} color="green" icon={<TrendingUp className="h-5 w-5" />} />
+          <SummaryCard label="Custos" value={totals.custo} color="orange" icon={<ShoppingBag className="h-5 w-5" />} />
+          <SummaryCard label="Despesas" value={totals.despesa} color="red" icon={<TrendingDown className="h-5 w-5" />} />
+          <SummaryCard label="Saldo" value={saldo} color={saldo >= 0 ? "blue" : "red"} icon={<Wallet className="h-5 w-5" />} />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-gray-800">Lançamentos</h2>
+          <button
+            onClick={() => { setSelectedType("receita"); setShowModal(true); }}
+            className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Novo
+          </button>
+        </div>
+
+        {loadingData ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-green-600" />
+          </div>
+        ) : transactions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-white py-16 text-center">
+            <p className="text-sm text-gray-400">Nenhum lançamento ainda.</p>
+            <button
+              onClick={() => { setSelectedType("receita"); setShowModal(true); }}
+              className="mt-3 text-sm font-semibold text-green-600 hover:underline"
+            >
+              Adicionar o primeiro
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-xl border bg-white divide-y overflow-hidden">
+            {transactions.map(tx => (
+              <TransactionRow key={tx.id} tx={tx} />
+            ))}
+          </div>
+        )}
       </main>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-4 sm:pb-0">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-bold text-gray-900">Novo lançamento</h2>
+              <button onClick={() => setShowModal(false)}>
+                <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-medium">
+                {(["receita", "custo", "despesa"] as TransactionType[]).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setSelectedType(t)}
+                    className={`flex-1 py-2 capitalize transition-colors ${
+                      selectedType === t
+                        ? t === "receita" ? "bg-green-600 text-white"
+                          : t === "custo" ? "bg-orange-500 text-white"
+                          : "bg-red-500 text-white"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Valor (R$)</label>
+                <input
+                  name="amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  placeholder="0,00"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Descrição <span className="text-gray-400">(opcional)</span></label>
+                <input
+                  name="description"
+                  type="text"
+                  placeholder="Ex: Pagamento cliente X"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Categoria</label>
+                <select
+                  name="category_id"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                >
+                  <option value="">Sem categoria</option>
+                  {filteredCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Data</label>
+                <input
+                  name="date"
+                  type="date"
+                  required
+                  defaultValue={new Date().toISOString().split("T")[0]}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />} Salvar
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const colorMap = {
+  green:  { bg: "bg-green-50",  text: "text-green-700",  icon: "text-green-500"  },
+  orange: { bg: "bg-orange-50", text: "text-orange-700", icon: "text-orange-500" },
+  red:    { bg: "bg-red-50",    text: "text-red-600",    icon: "text-red-500"    },
+  blue:   { bg: "bg-blue-50",   text: "text-blue-700",   icon: "text-blue-500"   },
+};
+
+function SummaryCard({ label, value, color, icon }: {
+  label: string;
+  value: number;
+  color: keyof typeof colorMap;
+  icon: React.ReactNode;
+}) {
+  const c = colorMap[color];
+  return (
+    <div className={`rounded-xl p-4 ${c.bg}`}>
+      <div className={`mb-2 ${c.icon}`}>{icon}</div>
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className={`text-base font-bold ${c.text} truncate`}>{formatBRL(value)}</p>
+    </div>
+  );
+}
+
+const typeBadge: Record<string, string> = {
+  receita: "bg-green-100 text-green-700",
+  custo:   "bg-orange-100 text-orange-700",
+  despesa: "bg-red-100 text-red-600",
+};
+
+const typeLabel: Record<string, string> = {
+  receita: "Receita",
+  custo: "Custo",
+  despesa: "Despesa",
+};
+
+function TransactionRow({ tx }: { tx: Transaction }) {
+  const date = new Date(tx.date + "T12:00:00").toLocaleDateString("pt-BR");
+  const title = tx.description || tx.categories?.name || "—";
+  const subtitle = [tx.categories?.name, date].filter(Boolean).join(" · ");
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${typeBadge[tx.type]}`}>
+          {typeLabel[tx.type]}
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-800 truncate">{title}</p>
+          <p className="text-xs text-gray-400">{subtitle}</p>
+        </div>
+      </div>
+      <p className={`shrink-0 ml-4 text-sm font-bold ${tx.type === "receita" ? "text-green-600" : "text-red-500"}`}>
+        {tx.type === "receita" ? "+" : "-"}{formatBRL(tx.amount)}
+      </p>
     </div>
   );
 }
