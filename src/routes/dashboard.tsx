@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, TrendingUp, TrendingDown, Percent, ShoppingBag, X, MoreVertical, Pencil, Trash2, UserCircle, ChevronDown, LogOut } from "lucide-react";
+import { Loader2, Plus, TrendingUp, TrendingDown, ShoppingBag, X, MoreVertical, Pencil, Trash2, UserCircle, ChevronDown, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
@@ -449,14 +449,15 @@ function SummaryCard({ label, value, color, icon }: {
 }
 
 function SaldoMargemCard({ saldo, margem }: { saldo: number; margem: number }) {
-  const positivo = saldo >= 0;
-  const bg        = positivo ? "bg-blue-50"    : "bg-red-50";
-  const textMain  = positivo ? "text-blue-700"  : "text-red-600";
-  const iconColor = positivo ? "text-blue-500"  : "text-red-500";
+  const positivo   = saldo >= 0;
+  const bg         = positivo ? "bg-blue-50"          : "bg-red-50";
+  const textMain   = positivo ? "text-blue-700"        : "text-red-600";
+  const iconColor  = positivo ? "text-blue-500"        : "text-red-500";
   const badgeColor = positivo ? "bg-blue-100 text-blue-600" : "bg-red-100 text-red-600";
+  const Seta       = positivo ? TrendingUp             : TrendingDown;
   return (
     <div className={`rounded-xl p-4 ${bg}`}>
-      <div className={`mb-2 ${iconColor}`}><Percent className="h-5 w-5" /></div>
+      <div className={`mb-2 ${iconColor}`}><Seta className="h-5 w-5" /></div>
       <p className="text-xs text-gray-500">Saldo</p>
       <p className={`text-base font-bold ${textMain} truncate`}>{formatBRL(saldo)}</p>
       <span className={`mt-1 inline-block text-xs font-medium px-1.5 py-0.5 rounded-full ${badgeColor}`}>
