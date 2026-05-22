@@ -17,6 +17,7 @@ function PerfilPage() {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [document, setDocument] = useState("");
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -24,6 +25,7 @@ function PerfilPage() {
 
   useEffect(() => {
     if (!user) return;
+    setEmail(user.email ?? "");
     supabase.from("profiles").select("name, document").eq("id", user.id).single()
       .then(({ data }) => {
         if (data) {
@@ -39,14 +41,27 @@ function PerfilPage() {
     if (name.trim().length < 2) { toast.error("Informe seu nome"); return; }
 
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({
-      name: name.trim(),
-      document: document.trim() || null,
-    }).eq("id", user!.id);
+
+    const [profileResult, emailResult] = await Promise.all([
+      supabase.from("profiles").update({
+        name: name.trim(),
+        document: document.trim() || null,
+      }).eq("id", user!.id),
+      email.trim() !== user!.email
+        ? supabase.auth.updateUser({ email: email.trim() })
+        : Promise.resolve({ error: null }),
+    ]);
+
     setSaving(false);
 
-    if (error) { toast.error("Erro ao salvar"); return; }
-    toast.success("Perfil atualizado!");
+    if (profileResult.error) { toast.error("Erro ao salvar perfil"); return; }
+    if (emailResult.error) { toast.error("Erro ao atualizar e-mail"); return; }
+
+    if (email.trim() !== user!.email) {
+      toast.success("Perfil salvo! Verifique o novo e-mail para confirmar a troca.");
+    } else {
+      toast.success("Perfil atualizado!");
+    }
   }
 
   if (loading || loadingData) {
@@ -107,11 +122,12 @@ function PerfilPage() {
               <label className="text-sm font-medium text-gray-700">E-mail</label>
               <input
                 type="email"
-                value={user?.email ?? ""}
-                disabled
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 cursor-not-allowed"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
-              <p className="mt-1 text-xs text-gray-400">O e-mail não pode ser alterado</p>
+              <p className="mt-1 text-xs text-gray-400">Se alterar, enviaremos um link de confirmação para o novo e-mail</p>
             </div>
 
             <button
