@@ -209,17 +209,40 @@ function DashboardPage() {
             </button>
           </div>
         ) : (
-          <div className="rounded-xl border bg-white divide-y overflow-hidden">
-            {transactions.map(tx => (
-              <TransactionRow
-                key={tx.id}
-                tx={tx}
-                menuOpen={openMenuId === tx.id}
-                onToggleMenu={e => { e.stopPropagation(); setOpenMenuId(openMenuId === tx.id ? null : tx.id); }}
-                onEdit={() => openEdit(tx)}
-                onDelete={() => handleDelete(tx.id)}
-              />
-            ))}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {(["receita", "custo", "despesa"] as TransactionType[]).map(type => {
+              const group = transactions.filter(t => t.type === type);
+              const columnStyle = {
+                receita: { border: "border-green-200",  header: "bg-green-50 text-green-700",  badge: "bg-green-100 text-green-700"  },
+                custo:   { border: "border-orange-200", header: "bg-orange-50 text-orange-700", badge: "bg-orange-100 text-orange-700" },
+                despesa: { border: "border-red-200",    header: "bg-red-50 text-red-600",       badge: "bg-red-100 text-red-600"      },
+              }[type];
+              const label = { receita: "Receitas", custo: "Custos", despesa: "Despesas" }[type];
+
+              return (
+                <div key={type} className={`rounded-xl border ${columnStyle.border} bg-white overflow-hidden`}>
+                  <div className={`px-4 py-2.5 ${columnStyle.header} font-semibold text-sm`}>
+                    {label}
+                  </div>
+                  {group.length === 0 ? (
+                    <p className="px-4 py-6 text-xs text-gray-400 text-center">Nenhum lançamento</p>
+                  ) : (
+                    <div className="divide-y">
+                      {group.map(tx => (
+                        <TransactionRow
+                          key={tx.id}
+                          tx={tx}
+                          menuOpen={openMenuId === tx.id}
+                          onToggleMenu={e => { e.stopPropagation(); setOpenMenuId(openMenuId === tx.id ? null : tx.id); }}
+                          onEdit={() => openEdit(tx)}
+                          onDelete={() => handleDelete(tx.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </main>
@@ -394,17 +417,6 @@ function SummaryCard({ label, value, color, icon }: {
   );
 }
 
-const typeBadge: Record<string, string> = {
-  receita: "bg-green-100 text-green-700",
-  custo:   "bg-orange-100 text-orange-700",
-  despesa: "bg-red-100 text-red-600",
-};
-
-const typeLabel: Record<string, string> = {
-  receita: "Receita",
-  custo:   "Custo",
-  despesa: "Despesa",
-};
 
 function TransactionRow({ tx, menuOpen, onToggleMenu, onEdit, onDelete }: {
   tx: Transaction;
@@ -415,21 +427,15 @@ function TransactionRow({ tx, menuOpen, onToggleMenu, onEdit, onDelete }: {
 }) {
   const date = new Date(tx.date + "T12:00:00").toLocaleDateString("pt-BR");
   const title = tx.description || tx.categories?.name || "—";
-  const subtitle = [tx.categories?.name, date].filter(Boolean).join(" · ");
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
-      <div className="flex items-center gap-3 min-w-0">
-        <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${typeBadge[tx.type]}`}>
-          {typeLabel[tx.type]}
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-800 truncate">{title}</p>
-          <p className="text-xs text-gray-400">{subtitle}</p>
-        </div>
+    <div className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-gray-800 truncate">{title}</p>
+        <p className="text-xs text-gray-400">{tx.categories?.name ? `${tx.categories.name} · ` : ""}{date}</p>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0 ml-4">
+      <div className="flex items-center gap-1 shrink-0 ml-2">
         <p className={`text-sm font-bold ${tx.type === "receita" ? "text-green-600" : "text-red-500"}`}>
           {tx.type === "receita" ? "+" : "-"}{formatBRL(tx.amount)}
         </p>
