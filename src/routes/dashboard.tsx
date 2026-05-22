@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, TrendingUp, TrendingDown, ShoppingBag, X, MoreVertical, Pencil, Trash2, UserCircle, ChevronDown, LogOut } from "lucide-react";
+import { Loader2, Plus, TrendingUp, TrendingDown, ShoppingBag, X, MoreVertical, Pencil, Trash2, UserCircle, ChevronDown, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
@@ -45,6 +45,7 @@ function DashboardPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [profileName, setProfileName] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState(() => new Date());
   const [useCalc, setUseCalc] = useState(false);
   const [qty, setQty] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
@@ -56,19 +57,44 @@ function DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    loadData();
     supabase.from("profiles").select("name").eq("id", user.id).single()
       .then(({ data }) => { if (data) setProfileName(data.name); });
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    loadData();
+  }, [user, currentDate]);
+
+  function mesAnterior() {
+    setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  }
+
+  function mesSeguinte() {
+    setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+  }
+
+  const isCurrentMonth = () => {
+    const now = new Date();
+    return currentDate.getMonth() === now.getMonth() && currentDate.getFullYear() === now.getFullYear();
+  };
+
+  const mesLabel = currentDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
   async function loadData() {
     setLoadingData(true);
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    const end = new Date(year, month + 1, 0).toISOString().split("T")[0];
+
     const [{ data: txs }, { data: cats }] = await Promise.all([
       supabase
         .from("transactions")
         .select("*, categories(name)")
-        .order("date", { ascending: false })
-        .limit(50),
+        .gte("date", start)
+        .lte("date", end)
+        .order("date", { ascending: false }),
       supabase.from("categories").select("*").order("name"),
     ]);
     setTransactions((txs as Transaction[]) ?? []);
@@ -211,6 +237,17 @@ function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
+        {/* Seletor de mês */}
+        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-2.5">
+          <button onClick={mesAnterior} className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <span className="text-sm font-semibold text-gray-700 capitalize">{mesLabel}</span>
+          <button onClick={mesSeguinte} disabled={isCurrentMonth()} className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <SummaryCard label="Receitas" value={totals.receita} color="green"  icon={<TrendingUp   className="h-5 w-5" />} />
           <SummaryCard label="Custos"   value={totals.custo}   color="orange" icon={<ShoppingBag  className="h-5 w-5" />} />
