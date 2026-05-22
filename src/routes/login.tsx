@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,6 +11,7 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,13 +34,41 @@ function LoginPage() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label className="text-sm font-medium text-gray-700">E-mail</label>
-            <input name="email" type="email" required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            <input
+              name="email"
+              type="email"
+              required
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Senha</label>
-            <input name="password" type="password" required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">Senha</label>
+              <Link to="/recuperar-senha" className="text-xs text-green-600 hover:underline">
+                Esqueci minha senha
+              </Link>
+            </div>
+            <div className="relative mt-1">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
-          <button type="submit" disabled={loading} className="w-full rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />} Entrar
           </button>
         </form>
