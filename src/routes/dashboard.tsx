@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, TrendingUp, TrendingDown, Wallet, ShoppingBag, X } from "lucide-react";
+import { Loader2, Plus, TrendingUp, TrendingDown, Wallet, ShoppingBag, X, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
@@ -41,6 +41,8 @@ function DashboardPage() {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>("receita");
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -66,6 +68,27 @@ function DashboardPage() {
     setLoadingData(false);
   }
 
+  function openNew() {
+    setEditingTx(null);
+    setSelectedType("receita");
+    setShowModal(true);
+  }
+
+  function openEdit(tx: Transaction) {
+    setEditingTx(tx);
+    setSelectedType(tx.type);
+    setOpenMenuId(null);
+    setShowModal(true);
+  }
+
+  async function handleDelete(id: string) {
+    setOpenMenuId(null);
+    const { error } = await supabase.from("transactions").delete().eq("id", id);
+    if (error) { toast.error("Erro ao excluir"); return; }
+    toast.success("Lançamento excluído");
+    loadData();
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -80,25 +103,38 @@ function DashboardPage() {
     }
 
     setSaving(true);
-    const { error } = await supabase.from("transactions").insert({
-      user_id: user!.id,
-      type: selectedType,
-      amount,
-      description: description || null,
-      category_id: category_id || null,
-      date,
-    });
-    setSaving(false);
+    let error;
 
+    if (editingTx) {
+      ({ error } = await supabase.from("transactions").update({
+        type: selectedType,
+        amount,
+        description: description || null,
+        category_id: category_id || null,
+        date,
+      }).eq("id", editingTx.id));
+    } else {
+      ({ error } = await supabase.from("transactions").insert({
+        user_id: user!.id,
+        type: selectedType,
+        amount,
+        description: description || null,
+        category_id: category_id || null,
+        date,
+      }));
+    }
+
+    setSaving(false);
     if (error) { toast.error("Erro ao salvar lançamento"); return; }
-    toast.success("Lançamento salvo!");
+    toast.success(editingTx ? "Lançamento atualizado!" : "Lançamento salvo!");
     setShowModal(false);
+    setEditingTx(null);
     loadData();
   }
 
   const totals = {
     receita: transactions.filter(t => t.type === "receita").reduce((s, t) => s + t.amount, 0),
-    custo: transactions.filter(t => t.type === "custo").reduce((s, t) => s + t.amount, 0),
+    custo:   transactions.filter(t => t.type === "custo").reduce((s, t) => s + t.amount, 0),
     despesa: transactions.filter(t => t.type === "despesa").reduce((s, t) => s + t.amount, 0),
   };
   const saldo = totals.receita - totals.custo - totals.despesa;
@@ -113,7 +149,7 @@ function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" onClick={() => setOpenMenuId(null)}>
       <header className="border-b bg-white px-6 py-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-green-700">Meu Negócio Fácil</h1>
         <button onClick={() => signOut()} className="text-sm text-gray-500 hover:text-gray-800">Sair</button>
@@ -121,16 +157,16 @@ function DashboardPage() {
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <SummaryCard label="Receitas" value={totals.receita} color="green" icon={<TrendingUp className="h-5 w-5" />} />
-          <SummaryCard label="Custos" value={totals.custo} color="orange" icon={<ShoppingBag className="h-5 w-5" />} />
-          <SummaryCard label="Despesas" value={totals.despesa} color="red" icon={<TrendingDown className="h-5 w-5" />} />
-          <SummaryCard label="Saldo" value={saldo} color={saldo >= 0 ? "blue" : "red"} icon={<Wallet className="h-5 w-5" />} />
+          <SummaryCard label="Receitas" value={totals.receita} color="green"  icon={<TrendingUp  className="h-5 w-5" />} />
+          <SummaryCard label="Custos"   value={totals.custo}   color="orange" icon={<ShoppingBag className="h-5 w-5" />} />
+          <SummaryCard label="Despesas" value={totals.despesa} color="red"    icon={<TrendingDown className="h-5 w-5" />} />
+          <SummaryCard label="Saldo"    value={saldo}          color={saldo >= 0 ? "blue" : "red"} icon={<Wallet className="h-5 w-5" />} />
         </div>
 
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-800">Lançamentos</h2>
           <button
-            onClick={() => { setSelectedType("receita"); setShowModal(true); }}
+            onClick={e => { e.stopPropagation(); openNew(); }}
             className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
           >
             <Plus className="h-4 w-4" /> Novo
@@ -144,17 +180,21 @@ function DashboardPage() {
         ) : transactions.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white py-16 text-center">
             <p className="text-sm text-gray-400">Nenhum lançamento ainda.</p>
-            <button
-              onClick={() => { setSelectedType("receita"); setShowModal(true); }}
-              className="mt-3 text-sm font-semibold text-green-600 hover:underline"
-            >
+            <button onClick={openNew} className="mt-3 text-sm font-semibold text-green-600 hover:underline">
               Adicionar o primeiro
             </button>
           </div>
         ) : (
           <div className="rounded-xl border bg-white divide-y overflow-hidden">
             {transactions.map(tx => (
-              <TransactionRow key={tx.id} tx={tx} />
+              <TransactionRow
+                key={tx.id}
+                tx={tx}
+                menuOpen={openMenuId === tx.id}
+                onToggleMenu={e => { e.stopPropagation(); setOpenMenuId(openMenuId === tx.id ? null : tx.id); }}
+                onEdit={() => openEdit(tx)}
+                onDelete={() => handleDelete(tx.id)}
+              />
             ))}
           </div>
         )}
@@ -164,13 +204,15 @@ function DashboardPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-4 sm:pb-0">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-bold text-gray-900">Novo lançamento</h2>
-              <button onClick={() => setShowModal(false)}>
+              <h2 className="text-base font-bold text-gray-900">
+                {editingTx ? "Editar lançamento" : "Novo lançamento"}
+              </h2>
+              <button onClick={() => { setShowModal(false); setEditingTx(null); }}>
                 <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form key={editingTx?.id ?? "new"} onSubmit={handleSubmit} className="space-y-4">
               <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-medium">
                 {(["receita", "custo", "despesa"] as TransactionType[]).map(t => (
                   <button
@@ -199,6 +241,7 @@ function DashboardPage() {
                   min="0.01"
                   required
                   placeholder="0,00"
+                  defaultValue={editingTx?.amount ?? ""}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
@@ -209,6 +252,7 @@ function DashboardPage() {
                   name="description"
                   type="text"
                   placeholder="Ex: Pagamento cliente X"
+                  defaultValue={editingTx?.description ?? ""}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
@@ -217,6 +261,7 @@ function DashboardPage() {
                 <label className="text-sm font-medium text-gray-700">Categoria</label>
                 <select
                   name="category_id"
+                  defaultValue={editingTx?.category_id ?? ""}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
                 >
                   <option value="">Sem categoria</option>
@@ -232,7 +277,7 @@ function DashboardPage() {
                   name="date"
                   type="date"
                   required
-                  defaultValue={new Date().toISOString().split("T")[0]}
+                  defaultValue={editingTx?.date ?? new Date().toISOString().split("T")[0]}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
@@ -242,7 +287,8 @@ function DashboardPage() {
                 disabled={saving}
                 className="w-full rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               >
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />} Salvar
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {editingTx ? "Salvar alterações" : "Salvar"}
               </button>
             </form>
           </div>
@@ -283,11 +329,17 @@ const typeBadge: Record<string, string> = {
 
 const typeLabel: Record<string, string> = {
   receita: "Receita",
-  custo: "Custo",
+  custo:   "Custo",
   despesa: "Despesa",
 };
 
-function TransactionRow({ tx }: { tx: Transaction }) {
+function TransactionRow({ tx, menuOpen, onToggleMenu, onEdit, onDelete }: {
+  tx: Transaction;
+  menuOpen: boolean;
+  onToggleMenu: (e: React.MouseEvent) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   const date = new Date(tx.date + "T12:00:00").toLocaleDateString("pt-BR");
   const title = tx.description || tx.categories?.name || "—";
   const subtitle = [tx.categories?.name, date].filter(Boolean).join(" · ");
@@ -303,9 +355,38 @@ function TransactionRow({ tx }: { tx: Transaction }) {
           <p className="text-xs text-gray-400">{subtitle}</p>
         </div>
       </div>
-      <p className={`shrink-0 ml-4 text-sm font-bold ${tx.type === "receita" ? "text-green-600" : "text-red-500"}`}>
-        {tx.type === "receita" ? "+" : "-"}{formatBRL(tx.amount)}
-      </p>
+
+      <div className="flex items-center gap-3 shrink-0 ml-4">
+        <p className={`text-sm font-bold ${tx.type === "receita" ? "text-green-600" : "text-red-500"}`}>
+          {tx.type === "receita" ? "+" : "-"}{formatBRL(tx.amount)}
+        </p>
+
+        <div className="relative">
+          <button
+            onClick={onToggleMenu}
+            className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 top-7 z-10 w-36 rounded-lg border bg-white shadow-lg py-1">
+              <button
+                onClick={onEdit}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <Pencil className="h-4 w-4 text-gray-400" /> Editar
+              </button>
+              <button
+                onClick={onDelete}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" /> Excluir
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
