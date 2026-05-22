@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, TrendingUp, TrendingDown, Percent, ShoppingBag, X, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, TrendingUp, TrendingDown, Percent, ShoppingBag, X, MoreVertical, Pencil, Trash2, UserCircle, ChevronDown, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
@@ -43,6 +43,8 @@ function DashboardPage() {
   const [selectedType, setSelectedType] = useState<TransactionType>("receita");
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState("");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [useCalc, setUseCalc] = useState(false);
   const [qty, setQty] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
@@ -55,6 +57,8 @@ function DashboardPage() {
   useEffect(() => {
     if (!user) return;
     loadData();
+    supabase.from("profiles").select("name").eq("id", user.id).single()
+      .then(({ data }) => { if (data) setProfileName(data.name); });
   }, [user]);
 
   async function loadData() {
@@ -177,7 +181,33 @@ function DashboardPage() {
     <div className="min-h-screen bg-gray-50" onClick={() => setOpenMenuId(null)}>
       <header className="border-b bg-white px-6 py-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-green-700">Meu Negócio Fácil</h1>
-        <button onClick={() => signOut()} className="text-sm text-gray-500 hover:text-gray-800">Sair</button>
+        <div className="relative">
+          <button
+            onClick={e => { e.stopPropagation(); setUserMenuOpen(!userMenuOpen); }}
+            className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 font-medium"
+          >
+            <UserCircle className="h-5 w-5 text-green-600" />
+            <span>{profileName || user.email}</span>
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          </button>
+          {userMenuOpen && (
+            <div className="absolute right-0 top-9 z-20 w-44 rounded-lg border bg-white shadow-lg py-1">
+              <Link
+                to="/perfil"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <UserCircle className="h-4 w-4 text-gray-400" /> Meu Perfil
+              </Link>
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4" /> Sair
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
