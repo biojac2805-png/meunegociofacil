@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, TrendingUp, TrendingDown, Wallet, ShoppingBag, X, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, TrendingUp, TrendingDown, Percent, ShoppingBag, X, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
@@ -161,7 +161,8 @@ function DashboardPage() {
     custo:   transactions.filter(t => t.type === "custo").reduce((s, t) => s + t.amount, 0),
     despesa: transactions.filter(t => t.type === "despesa").reduce((s, t) => s + t.amount, 0),
   };
-  const saldo = totals.receita - totals.custo - totals.despesa;
+  const lucro = totals.receita - totals.custo - totals.despesa;
+  const margem = totals.receita > 0 ? (lucro / totals.receita) * 100 : 0;
   const filteredCategories = categories.filter(c => c.type === selectedType);
 
   if (loading || !user) {
@@ -181,10 +182,10 @@ function DashboardPage() {
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <SummaryCard label="Receitas" value={totals.receita} color="green"  icon={<TrendingUp  className="h-5 w-5" />} />
-          <SummaryCard label="Custos"   value={totals.custo}   color="orange" icon={<ShoppingBag className="h-5 w-5" />} />
+          <SummaryCard label="Receitas" value={totals.receita} color="green"  icon={<TrendingUp   className="h-5 w-5" />} />
+          <SummaryCard label="Custos"   value={totals.custo}   color="orange" icon={<ShoppingBag  className="h-5 w-5" />} />
           <SummaryCard label="Despesas" value={totals.despesa} color="red"    icon={<TrendingDown className="h-5 w-5" />} />
-          <SummaryCard label="Saldo"    value={saldo}          color={saldo >= 0 ? "blue" : "red"} icon={<Wallet className="h-5 w-5" />} />
+          <MargemCard margem={margem} icon={<Percent className="h-5 w-5" />} />
         </div>
 
         <div className="flex items-center justify-between">
@@ -413,6 +414,20 @@ function SummaryCard({ label, value, color, icon }: {
       <div className={`mb-2 ${c.icon}`}>{icon}</div>
       <p className="text-xs text-gray-500">{label}</p>
       <p className={`text-base font-bold ${c.text} truncate`}>{formatBRL(value)}</p>
+    </div>
+  );
+}
+
+function MargemCard({ margem, icon }: { margem: number; icon: React.ReactNode }) {
+  const positiva = margem >= 0;
+  const bg   = positiva ? "bg-blue-50"   : "bg-red-50";
+  const text = positiva ? "text-blue-700" : "text-red-600";
+  const iconColor = positiva ? "text-blue-500" : "text-red-500";
+  return (
+    <div className={`rounded-xl p-4 ${bg}`}>
+      <div className={`mb-2 ${iconColor}`}>{icon}</div>
+      <p className="text-xs text-gray-500">Margem</p>
+      <p className={`text-base font-bold ${text}`}>{margem.toFixed(1)}%</p>
     </div>
   );
 }
