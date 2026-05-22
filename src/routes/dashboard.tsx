@@ -165,8 +165,8 @@ function DashboardPage() {
     custo:   transactions.filter(t => t.type === "custo").reduce((s, t) => s + t.amount, 0),
     despesa: transactions.filter(t => t.type === "despesa").reduce((s, t) => s + t.amount, 0),
   };
-  const lucro = totals.receita - totals.custo - totals.despesa;
-  const margem = totals.receita > 0 ? (lucro / totals.receita) * 100 : 0;
+  const saldo = totals.receita - totals.custo - totals.despesa;
+  const margem = totals.receita > 0 ? (saldo / totals.receita) * 100 : 0;
   const filteredCategories = categories.filter(c => c.type === selectedType);
 
   if (loading || !user) {
@@ -215,7 +215,7 @@ function DashboardPage() {
           <SummaryCard label="Receitas" value={totals.receita} color="green"  icon={<TrendingUp   className="h-5 w-5" />} />
           <SummaryCard label="Custos"   value={totals.custo}   color="orange" icon={<ShoppingBag  className="h-5 w-5" />} />
           <SummaryCard label="Despesas" value={totals.despesa} color="red"    icon={<TrendingDown className="h-5 w-5" />} />
-          <MargemCard margem={margem} icon={<Percent className="h-5 w-5" />} />
+          <SaldoMargemCard saldo={saldo} margem={margem} />
         </div>
 
         <div className="flex items-center justify-between">
@@ -448,16 +448,20 @@ function SummaryCard({ label, value, color, icon }: {
   );
 }
 
-function MargemCard({ margem, icon }: { margem: number; icon: React.ReactNode }) {
-  const positiva = margem >= 0;
-  const bg   = positiva ? "bg-blue-50"   : "bg-red-50";
-  const text = positiva ? "text-blue-700" : "text-red-600";
-  const iconColor = positiva ? "text-blue-500" : "text-red-500";
+function SaldoMargemCard({ saldo, margem }: { saldo: number; margem: number }) {
+  const positivo = saldo >= 0;
+  const bg        = positivo ? "bg-blue-50"    : "bg-red-50";
+  const textMain  = positivo ? "text-blue-700"  : "text-red-600";
+  const iconColor = positivo ? "text-blue-500"  : "text-red-500";
+  const badgeColor = positivo ? "bg-blue-100 text-blue-600" : "bg-red-100 text-red-600";
   return (
     <div className={`rounded-xl p-4 ${bg}`}>
-      <div className={`mb-2 ${iconColor}`}>{icon}</div>
-      <p className="text-xs text-gray-500">Margem</p>
-      <p className={`text-base font-bold ${text}`}>{margem.toFixed(1)}%</p>
+      <div className={`mb-2 ${iconColor}`}><Percent className="h-5 w-5" /></div>
+      <p className="text-xs text-gray-500">Saldo</p>
+      <p className={`text-base font-bold ${textMain} truncate`}>{formatBRL(saldo)}</p>
+      <span className={`mt-1 inline-block text-xs font-medium px-1.5 py-0.5 rounded-full ${badgeColor}`}>
+        Margem {margem.toFixed(1)}%
+      </span>
     </div>
   );
 }
