@@ -43,6 +43,10 @@ function DashboardPage() {
   const [selectedType, setSelectedType] = useState<TransactionType>("receita");
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [useCalc, setUseCalc] = useState(false);
+  const [qty, setQty] = useState("");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [amountValue, setAmountValue] = useState("");
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -71,14 +75,34 @@ function DashboardPage() {
   function openNew() {
     setEditingTx(null);
     setSelectedType("receita");
+    setUseCalc(false);
+    setQty("");
+    setUnitPrice("");
+    setAmountValue("");
     setShowModal(true);
   }
 
   function openEdit(tx: Transaction) {
     setEditingTx(tx);
     setSelectedType(tx.type);
+    setUseCalc(false);
+    setQty("");
+    setUnitPrice("");
+    setAmountValue(String(tx.amount));
     setOpenMenuId(null);
     setShowModal(true);
+  }
+
+  function handleCalcChange(newQty: string, newUnitPrice: string) {
+    setQty(newQty);
+    setUnitPrice(newUnitPrice);
+    const q = parseFloat(newQty);
+    const p = parseFloat(newUnitPrice.replace(",", "."));
+    if (!isNaN(q) && !isNaN(p) && q > 0 && p > 0) {
+      setAmountValue((q * p).toFixed(2));
+    } else {
+      setAmountValue("");
+    }
   }
 
   async function handleDelete(id: string) {
@@ -233,17 +257,66 @@ function DashboardPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Valor (R$)</label>
-                <input
-                  name="amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  required
-                  placeholder="0,00"
-                  defaultValue={editingTx?.amount ?? ""}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">Valor (R$)</label>
+                  <button
+                    type="button"
+                    onClick={() => { setUseCalc(!useCalc); setQty(""); setUnitPrice(""); setAmountValue(editingTx ? String(editingTx.amount) : ""); }}
+                    className="text-xs text-green-600 hover:underline"
+                  >
+                    {useCalc ? "Digitar valor direto" : "Calcular por quantidade"}
+                  </button>
+                </div>
+
+                {useCalc ? (
+                  <div className="mt-1 space-y-2">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="Qtd"
+                          value={qty}
+                          onChange={e => handleCalcChange(e.target.value, unitPrice)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <p className="mt-0.5 text-xs text-gray-400">Quantidade</p>
+                      </div>
+                      <div className="flex items-start pt-2 text-gray-400 font-bold">×</div>
+                      <div className="flex-1">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          placeholder="0,00"
+                          value={unitPrice}
+                          onChange={e => handleCalcChange(qty, e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <p className="mt-0.5 text-xs text-gray-400">Valor unitário</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2 flex items-center justify-between">
+                      <span className="text-sm text-gray-500">Total</span>
+                      <span className="text-sm font-bold text-green-700">
+                        {amountValue ? formatBRL(parseFloat(amountValue)) : "—"}
+                      </span>
+                    </div>
+                    <input type="hidden" name="amount" value={amountValue} />
+                  </div>
+                ) : (
+                  <input
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    placeholder="0,00"
+                    value={amountValue}
+                    onChange={e => setAmountValue(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                )}
               </div>
 
               <div>
