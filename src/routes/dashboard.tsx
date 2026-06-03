@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, TrendingUp, TrendingDown, ShoppingBag, X, MoreVertical, Pencil, Trash2, UserCircle, ChevronDown, LogOut, ChevronLeft, ChevronRight, BarChart2 } from "lucide-react";
 import { toast } from "sonner";
 import { VisaoGeral } from "@/components/VisaoGeral";
+import { AiAdvisor } from "@/components/AiAdvisor";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -329,6 +330,15 @@ function DashboardPage() {
             })}
           </div>
         )}
+
+        {/* Consultora IA */}
+        <AiAdvisor
+          receitas={totals.receita}
+          custos={totals.custo}
+          despesas={totals.despesa}
+          margem={margem}
+          mes={mesLabel}
+        />
 
         {/* Visão Geral */}
         {showVisaoGeral && (
