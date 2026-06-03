@@ -2,8 +2,9 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, TrendingUp, TrendingDown, ShoppingBag, X, MoreVertical, Pencil, Trash2, UserCircle, ChevronDown, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Plus, TrendingUp, TrendingDown, ShoppingBag, X, MoreVertical, Pencil, Trash2, UserCircle, ChevronDown, LogOut, ChevronLeft, ChevronRight, BarChart2 } from "lucide-react";
 import { toast } from "sonner";
+import { VisaoGeral } from "@/components/VisaoGeral";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -44,6 +45,7 @@ function DashboardPage() {
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [profileName, setProfileName] = useState("");
+  const [showVisaoGeral, setShowVisaoGeral] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [useCalc, setUseCalc] = useState(false);
@@ -207,6 +209,14 @@ function DashboardPage() {
     <div className="min-h-screen bg-gray-50" onClick={() => setOpenMenuId(null)}>
       <header className="border-b bg-white px-6 py-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-green-700">Meu Negócio Fácil</h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowVisaoGeral(!showVisaoGeral)}
+            title="Visão Geral"
+            className={`p-2 rounded-lg transition-colors ${showVisaoGeral ? "bg-green-100 text-green-700" : "text-gray-400 hover:text-green-700 hover:bg-green-50"}`}
+          >
+            <BarChart2 className="h-5 w-5" />
+          </button>
         <div className="relative">
           <button
             onClick={e => { e.stopPropagation(); setUserMenuOpen(!userMenuOpen); }}
@@ -233,6 +243,7 @@ function DashboardPage() {
               </button>
             </div>
           )}
+        </div>
         </div>
       </header>
 
@@ -311,6 +322,14 @@ function DashboardPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Visão Geral */}
+        {showVisaoGeral && (
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5">
+            <h2 className="text-base font-semibold text-gray-800 mb-4">Visão Geral — Últimos 6 meses</h2>
+            <VisaoGeral userId={user.id} />
           </div>
         )}
       </main>
