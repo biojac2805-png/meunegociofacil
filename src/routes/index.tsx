@@ -38,8 +38,8 @@ function LandingPage() {
             <Zap className="h-4 w-4" /> Gratuito para autônomos e MEIs
           </div>
           <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 leading-tight">
-            Pare de perder dinheiro<br />
-            sem <span className="text-green-600">saber por quê</span>
+            Seu negócio organizado,<br />
+            <span className="text-green-600">seu lucro visível</span>
           </h1>
           <p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Anote suas receitas, custos e despesas em segundos. Veja seu saldo na hora. Sem planilha, sem complicação.

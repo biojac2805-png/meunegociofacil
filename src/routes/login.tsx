@@ -75,7 +75,7 @@ function LoginPage() {
         </div>
 
         <p className="text-white/60 text-sm z-10 italic">
-          "Pare de perder dinheiro sem saber por quê."
+          "Seu negócio organizado, seu lucro visível."
         </p>
       </div>
 
