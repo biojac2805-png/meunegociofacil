@@ -24,7 +24,12 @@ function LandingPage() {
       {/* Header */}
       <header className="border-b border-gray-100 bg-white/80 backdrop-blur sticky top-0 z-10">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-          <span className="text-lg font-bold text-green-700">Meu Negócio Fácil</span>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 shadow-sm">
+              <span className="text-sm font-extrabold text-white">R$</span>
+            </div>
+            <span className="text-lg font-bold text-green-700">Meu Negócio Fácil</span>
+          </div>
           <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors">
             Entrar
           </Link>

@@ -52,7 +52,12 @@ function LoginPage() {
         <div className="absolute -bottom-16 left-1/3 h-80 w-80 rounded-full bg-white/5" />
 
         <div>
-          <span className="text-2xl font-extrabold text-white">Meu Negócio Fácil</span>
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+              <span className="text-sm font-extrabold text-white">R$</span>
+            </div>
+            <span className="text-2xl font-extrabold text-white">Meu Negócio Fácil</span>
+          </div>
           <p className="mt-2 text-green-200 text-sm">Para autônomos e MEIs</p>
         </div>
 
@@ -111,7 +116,12 @@ function LoginPage() {
 
           {/* Logo mobile */}
           <div className="mb-8 lg:hidden text-center">
-            <span className="text-2xl font-extrabold text-green-700">Meu Negócio Fácil</span>
+            <div className="flex items-center justify-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 shadow-sm">
+                <span className="text-sm font-extrabold text-white">R$</span>
+              </div>
+              <span className="text-2xl font-extrabold text-green-700">Meu Negócio Fácil</span>
+            </div>
           </div>
 
           <h1 className="text-3xl font-bold text-gray-900">Bem-vinda de volta!</h1>

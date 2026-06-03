@@ -75,7 +75,12 @@ function PerfilPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white px-6 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-green-700">Meu Negócio Fácil</h1>
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 shadow-sm">
+            <span className="text-sm font-extrabold text-white">R$</span>
+          </div>
+          <h1 className="text-lg font-bold text-green-700">Meu Negócio Fácil</h1>
+        </div>
       </header>
 
       <main className="mx-auto max-w-md px-4 py-10">
