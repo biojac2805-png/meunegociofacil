@@ -212,10 +212,10 @@ function DashboardPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowVisaoGeral(!showVisaoGeral)}
-            title="Visão Geral"
-            className={`p-2 rounded-lg transition-colors ${showVisaoGeral ? "bg-green-100 text-green-700" : "text-gray-400 hover:text-green-700 hover:bg-green-50"}`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${showVisaoGeral ? "bg-green-600 text-white" : "bg-green-50 text-green-700 hover:bg-green-100"}`}
           >
-            <BarChart2 className="h-5 w-5" />
+            <BarChart2 className="h-4 w-4" />
+            Visão Geral
           </button>
         <div className="relative">
           <button
