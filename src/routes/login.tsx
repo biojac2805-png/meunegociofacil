@@ -56,21 +56,47 @@ function LoginPage() {
           <p className="mt-2 text-green-200 text-sm">Para autônomos e MEIs</p>
         </div>
 
-        <div className="space-y-4 z-10">
-          <p className="text-white/70 text-xs uppercase tracking-widest font-semibold mb-6">Visão do seu negócio em tempo real</p>
+        <div className="space-y-6 z-10">
+          {/* Ilustração gráfico */}
+          <div className="rounded-2xl bg-white/10 backdrop-blur-sm p-5">
+            <p className="text-xs text-white/60 uppercase tracking-widest mb-4">Evolução do lucro</p>
+            <svg viewBox="0 0 280 120" className="w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Grade de fundo */}
+              {[0,30,60,90].map(y => (
+                <line key={y} x1="0" y1={y} x2="280" y2={y} stroke="white" strokeOpacity="0.08" strokeWidth="1" />
+              ))}
+              {/* Barras */}
+              <rect x="10"  y="90" width="28" height="30" rx="4" fill="white" fillOpacity="0.2" />
+              <rect x="50"  y="72" width="28" height="48" rx="4" fill="white" fillOpacity="0.25" />
+              <rect x="90"  y="60" width="28" height="60" rx="4" fill="white" fillOpacity="0.25" />
+              <rect x="130" y="45" width="28" height="75" rx="4" fill="white" fillOpacity="0.3" />
+              <rect x="170" y="30" width="28" height="90" rx="4" fill="white" fillOpacity="0.3" />
+              <rect x="210" y="15" width="28" height="105" rx="4" fill="#34d399" fillOpacity="0.7" />
+              <rect x="250" y="5"  width="28" height="115" rx="4" fill="#34d399" fillOpacity="0.9" />
+              {/* Linha de tendência */}
+              <polyline
+                points="24,88 64,70 104,58 144,43 184,28 224,13 264,3"
+                stroke="#6ee7b7"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Ponto de destaque */}
+              <circle cx="264" cy="3" r="4" fill="#6ee7b7" />
+              <circle cx="264" cy="3" r="7" fill="#6ee7b7" fillOpacity="0.3" />
+              {/* Labels meses */}
+              {["Jan","Fev","Mar","Abr","Mai","Jun","Jul"].map((m, i) => (
+                <text key={m} x={24 + i * 40} y="118" textAnchor="middle" fill="white" fillOpacity="0.5" fontSize="9">{m}</text>
+              ))}
+            </svg>
+          </div>
+
+          {/* Cards */}
           <div className="grid grid-cols-2 gap-3">
             <MockCard icon={<TrendingUp className="h-4 w-4" />} label="Receitas" value="R$ 3.840,00" color="bg-white/15" />
             <MockCard icon={<TrendingDown className="h-4 w-4" />} label="Custos" value="R$ 1.250,00" color="bg-white/15" />
             <MockCard icon={<Wallet className="h-4 w-4" />} label="Despesas" value="R$ 480,00" color="bg-white/15" />
             <MockCard icon={<ArrowUpRight className="h-4 w-4" />} label="Margem" value="54,4%" color="bg-emerald-500/30" highlight />
-          </div>
-          <div className="mt-4 rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
-            <p className="text-xs text-white/60 mb-3">Lançamentos do mês</p>
-            <div className="space-y-2">
-              <MockRow label="Quentinhas · 70 un." value="+R$ 840,00" positive />
-              <MockRow label="Ingredientes" value="-R$ 423,61" positive={false} />
-              <MockRow label="Embalagens" value="-R$ 57,43" positive={false} />
-            </div>
           </div>
         </div>
 
