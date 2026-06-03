@@ -33,7 +33,7 @@ export function AiAdvisor({ receitas, custos, despesas, margem, mes }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-purple-200 bg-white overflow-hidden">
+    <div className="rounded-2xl border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-white overflow-hidden shadow-sm">
       <button
         onClick={analisar}
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-purple-50 transition-colors"
