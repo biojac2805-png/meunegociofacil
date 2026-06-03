@@ -207,12 +207,3 @@ function MockCard({ icon, label, value, color, highlight = false }: {
     </div>
   );
 }
-
-function MockRow({ label, value, positive }: { label: string; value: string; positive: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-xs text-white/70">{label}</span>
-      <span className={`text-xs font-semibold ${positive ? "text-emerald-300" : "text-red-300"}`}>{value}</span>
-    </div>
-  );
-}
