@@ -81,7 +81,7 @@ function DashboardPage() {
     return currentDate.getMonth() === now.getMonth() && currentDate.getFullYear() === now.getFullYear();
   };
 
-  const mesLabel = currentDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const mesLabel = `${currentDate.toLocaleDateString("pt-BR", { month: "long" }).replace(/^\w/, c => c.toUpperCase())}/${currentDate.getFullYear()}`;
 
   async function loadData() {
     setLoadingData(true);
