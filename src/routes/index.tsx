@@ -53,8 +53,28 @@ function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-green-50 via-emerald-50 to-white px-6 py-24 text-center">
-        <div className="mx-auto max-w-3xl">
+      <section className="relative bg-gradient-to-br from-green-50 via-emerald-50 to-white px-6 py-24 text-center overflow-hidden">
+        {/* Marca d'água — gráfico de barras */}
+        <svg
+          viewBox="0 0 800 400"
+          className="absolute inset-0 w-full h-full pointer-events-none select-none"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
+        >
+          {[
+            { x: 40,  h: 120 },
+            { x: 140, h: 200 },
+            { x: 240, h: 160 },
+            { x: 340, h: 280 },
+            { x: 440, h: 220 },
+            { x: 540, h: 320 },
+            { x: 640, h: 260 },
+            { x: 740, h: 380 },
+          ].map(({ x, h }, i) => (
+            <rect key={i} x={x} y={400 - h} width="70" height={h} rx="8" fill="#16a34a" opacity="0.06" />
+          ))}
+        </svg>
+        <div className="relative mx-auto max-w-3xl">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-1.5 text-sm font-medium text-green-700">
             <Zap className="h-4 w-4" /> Gratuito para autônomos e MEIs
           </div>
