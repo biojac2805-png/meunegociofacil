@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import {
   TrendingUp, TrendingDown, Wallet, ChefHat, Scissors,
-  Briefcase, Wrench, CheckCircle, ArrowRight, Zap, BarChart2, ShieldCheck,
+  Briefcase, Wrench, CheckCircle, ArrowRight, Zap, BarChart2, ShieldCheck, Download,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -13,6 +13,22 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [installed, setInstalled] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => setInstalled(true));
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  async function handleInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") setInstalled(true);
+  }
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/dashboard" });
@@ -62,7 +78,21 @@ function LandingPage() {
             >
               Já tenho conta
             </Link>
+            {!installed && installPrompt && (
+              <button
+                onClick={handleInstall}
+                className="rounded-xl border border-green-300 bg-green-50 px-8 py-4 text-lg font-semibold text-green-700 hover:bg-green-100 transition-colors flex items-center justify-center gap-2"
+              >
+                <Download className="h-5 w-5" /> Instalar app
+              </button>
+            )}
+            {installed && (
+              <p className="self-center text-sm text-green-600 font-medium">App instalado!</p>
+            )}
           </div>
+          <p className="mt-4 text-sm text-gray-400">
+            No iPhone: toque em <span className="font-medium">Compartilhar</span> → <span className="font-medium">Adicionar à Tela de Início</span>
+          </p>
         </div>
       </section>
 
