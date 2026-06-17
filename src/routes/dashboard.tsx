@@ -546,7 +546,8 @@ function TransactionRow({ tx, menuOpen, onToggleMenu, onEdit, onDelete }: {
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const date = new Date(tx.date + "T12:00:00").toLocaleDateString("pt-BR");
+  const [ano, mes, dia] = tx.date.split("-");
+  const date = `${dia}/${mes}/${ano}`;
   const title = tx.description || tx.categories?.name || "—";
 
   return (
